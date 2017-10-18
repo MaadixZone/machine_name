@@ -24,6 +24,7 @@ class MachineName extends WidgetBase {
   public static function defaultSettings() {
     return array(
       'editable' => FALSE,
+      'unique' => TRUE,
     ) + parent::defaultSettings();
   }
 
@@ -60,15 +61,22 @@ class MachineName extends WidgetBase {
    * {@inheritdoc}
    */
   public function settingsForm(array $form, FormStateInterface $form_state) {
+    $elements = parent::settingsForm($form, $form_state);
 
-    $form['editable'] = array(
+    $elements['editable'] = array(
       '#type' => 'checkbox',
       '#title' => t('Editable'),
       '#description' => t('Allows field to be editable in saved entity.'),
       '#default_value' => $this->getSetting('editable'),
     );
+    $elements['unique'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Unique'),
+      '#description' => t('Check the value to be unique.'),
+      '#default_value' => $this->getSetting('unique'),
+    );
 
-    return $form;
+    return $elements;
   }
 
   public function settingsSummary() {
@@ -76,6 +84,9 @@ class MachineName extends WidgetBase {
 
     if (!empty($this->getSetting('editable'))) {
       $summary[] = t('Editable: @editable', array('@editable' => $this->getSetting('editable') ? 'yes' : 'no'));
+    }
+    if (!empty($this->getSetting('unique'))) {
+      $summary[] = t('Unique: @unique', array('@unique' => $this->getSetting('unique') ? 'yes' : 'no'));
     }
 
     return $summary;

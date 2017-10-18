@@ -2,14 +2,40 @@
 
 namespace Drupal\machine_name\Plugin\Validation\Constraint;
 
+
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Entity\EntityStorageInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 
 /**
  * Validates that a field is unique for the given entity type.
  */
-class MachineNameUniqueValidator extends ConstraintValidator {
+class MachineNameUniqueValidator extends ConstraintValidator implements ContainerInjectionInterface {
+  /**
+   * The entity form display storage.
+   *
+   * @var \Drupal\Core\Entity\EntityStorageInterface
+   */
+  private $entityFormDisplayStorage;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static($container->get('entity_type.manager')->getStorage('entity_form_display'));
+  }
+
+  /**
+   * Constructor.
+   * @param EntityStorageInterface $entity_form_display_storage
+   */
+  public function __construct(EntityStorageInterface $entity_form_display_storage)
+  {
+    $this->entityFormDisplayStorage = $entity_form_display_storage;
+  }
 
   /**
    * {@inheritdoc}
@@ -25,6 +51,13 @@ class MachineNameUniqueValidator extends ConstraintValidator {
     $entity_type = $entity->getEntityType();
     $field_name = $item->getFieldDefinition()->getName();
     $properties = $item->getProperties();
+    $form_display_id = $entity_type->id() . '.' . $entity->bundle() . '.default';
+    $form_display = $this->entityFormDisplayStorage->load($form_display_id);
+    $wants_unique = $form_display->getComponent($field_name)['settings']['unique'];
+
+    if (!$wants_unique){
+      return NULL;
+    }
 
     // Query to see if existing entity with machine name exists.
     $query = \Drupal::entityQuery($entity_type->id());
